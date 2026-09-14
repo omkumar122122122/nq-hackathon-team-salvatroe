@@ -14,45 +14,19 @@ export class PrismaService
 
   constructor() {
     super({
+      // NOTE: Do NOT add datasources here — Prisma reads DATABASE_URL from env.
+      // Only log config is set; no connection_limit override needed since
+      // Neon's PgBouncer pooler URL already controls pool size.
       log: [
-        { emit: 'event', level: 'query' },
         { emit: 'stdout', level: 'info' },
         { emit: 'stdout', level: 'warn' },
         { emit: 'stdout', level: 'error' },
       ],
     });
-
-    if (typeof (this as any).$use === 'function') {
-      (this as any).$use(async (params: any, next: any) => {
-        let retries = 2;
-        while (retries >= 0) {
-          try {
-            return await next(params);
-          } catch (error: any) {
-            const isClosed =
-              error?.message?.includes('Closed') ||
-              error?.message?.includes('kind: Closed') ||
-              error?.message?.includes('Connection closed') ||
-              error?.code === 'P1001' ||
-              error?.code === 'P1017';
-
-            if (isClosed && retries > 0) {
-              this.logger.warn(
-                `Prisma connection closed/dropped ("${error.message}"). Reconnecting Prisma... (${retries} retries left)`,
-              );
-              retries--;
-              try {
-                await this.$disconnect();
-              } catch { }
-              await new Promise((res) => setTimeout(res, 500));
-              await this.$connect();
-              continue;
-            }
-            throw error;
-          }
-        }
-      });
-    }
+    // IMPORTANT: Do NOT add a $use middleware that calls $disconnect()/$connect().
+    // Prisma manages connection health internally. Manually reconnecting inside
+    // middleware causes a thundering-herd: every concurrent request that hits a
+    // transient error will race to reconnect, exhausting the pool (P2024).
   }
 
   async onModuleInit() {
@@ -67,9 +41,9 @@ export class PrismaService
         retries--;
         if (retries > 0) {
           this.logger.warn(
-            `Initial Prisma connection attempt failed (Neon Serverless wake-up/cold start): ${err.message}. Retrying in 1.5s... (${retries} attempts left)`,
+            `Initial Prisma connection attempt failed (Neon Serverless wake-up/cold start): ${err.message}. Retrying in 2s... (${retries} attempts left)`,
           );
-          await new Promise((res) => setTimeout(res, 1500));
+          await new Promise((res) => setTimeout(res, 2000));
         } else {
           this.logger.error(`Initial Prisma connection error: ${err.message}`);
         }
