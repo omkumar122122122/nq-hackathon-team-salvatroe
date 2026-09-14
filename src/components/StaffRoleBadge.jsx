@@ -1,3 +1,4 @@
+import React from "react";
 /**
  * StaffRoleBadge Component
  * Displays a color-coded badge for staff roles

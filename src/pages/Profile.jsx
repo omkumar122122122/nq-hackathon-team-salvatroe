@@ -1,3 +1,4 @@
+import React from "react";
 import {
   FiBriefcase, FiCamera, FiCreditCard, FiFileText,
   FiHome, FiLogOut, FiMail, FiPhone, FiShield,

@@ -1,3 +1,4 @@
+import React from "react";
 import { FiCheckCircle, FiUser } from "react-icons/fi";
 
 const roleAvatarBg = {

@@ -1,3 +1,4 @@
+import React from "react";
 import { FiActivity, FiMessageCircle, FiShield, FiUser, FiCalendar, FiHeart, FiAlertTriangle } from "react-icons/fi";
 import DashboardLayout from "./DashboardLayout.jsx";
 

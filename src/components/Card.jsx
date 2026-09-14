@@ -1,3 +1,4 @@
+import React from "react";
 import { motion } from "framer-motion";
 import { classNames } from "../utils/formatters";
 import { FiActivity, FiTrendingUp, FiTrendingDown } from "react-icons/fi";

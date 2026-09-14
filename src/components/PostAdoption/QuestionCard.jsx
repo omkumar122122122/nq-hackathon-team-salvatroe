@@ -1,3 +1,4 @@
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiArrowLeft, FiArrowRight, FiCheckCircle, FiHelpCircle, FiSmile, FiMeh, FiFrown } from "react-icons/fi";
 import Button from "../Button";

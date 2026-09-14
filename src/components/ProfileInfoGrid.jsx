@@ -1,3 +1,4 @@
+import React from "react";
 import { Briefcase, Building, Calendar, Hash, Mail, Phone } from "lucide-react";
 
 function InfoField({ icon: Icon, label, value }) {

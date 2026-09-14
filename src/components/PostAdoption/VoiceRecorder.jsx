@@ -1,3 +1,4 @@
+import React from "react";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FiMic, FiPlay, FiPause, FiRotateCcw, FiCheckCircle, FiVolume2 } from "react-icons/fi";

@@ -53,4 +53,20 @@ export class FilterChildrenDto {
   @IsOptional()
   @IsString()
   sortOrder?: 'asc' | 'desc' = 'desc';
+
+  @ApiPropertyOptional({ description: 'Minimum age filter (inclusive)', minimum: 0, maximum: 18 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(18)
+  @Type(() => Number)
+  ageMin?: number;
+
+  @ApiPropertyOptional({ description: 'Maximum age filter (inclusive)', minimum: 0, maximum: 18 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(18)
+  @Type(() => Number)
+  ageMax?: number;
 }

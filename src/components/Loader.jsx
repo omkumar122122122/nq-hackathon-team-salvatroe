@@ -1,3 +1,4 @@
+import React from "react";
 export default function Loader({ label = "Loading…" }) {
   return (
     <div className="flex min-h-48 flex-col items-center justify-center gap-4" role="status" aria-label={label}>
