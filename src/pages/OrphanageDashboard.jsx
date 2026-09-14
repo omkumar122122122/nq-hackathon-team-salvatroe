@@ -34,6 +34,7 @@ export default function OrphanageDashboard() {
   const { user } = useAuth();
   const [dashboardData, setDashboardData] = useState(null);
   const [recentChildren, setRecentChildren] = useState([]);
+  const [selectedAgeFilter, setSelectedAgeFilter] = useState("ALL");
   const [pendingVisitRequests, setPendingVisitRequests] = useState([]);
   const [alertStats, setAlertStats] = useState({ total: 0, high: 0, pending: 0 });
   const [loading, setLoading] = useState(true);
@@ -55,7 +56,7 @@ export default function OrphanageDashboard() {
       }
       const [statsResponse, childrenResponse, visitsResponse, alertsResponse] = await Promise.allSettled([
         orphanagesService.getDashboardStats(),
-        orphanagesService.getMyChildren(5),
+        orphanagesService.getMyChildren(25),
         visitRequestsService.getAll({ status: "PENDING", limit: 5, sortBy: "createdAt", sortOrder: "desc" }),
         alertsService.getAll({ limit: 1 }).catch(() => ({ stats: { total: 0, high: 0, pending: 0 } })),
       ]);
@@ -244,36 +245,77 @@ export default function OrphanageDashboard() {
       </motion.div>
 
       {/* Children Table & Notifications */}
-      <motion.div {...fadeUp(0.28)} className="grid gap-5 grid-cols-1 lg:grid-cols-12">
-        <div className="lg:col-span-8 section-card">
-          <div className="section-card-header">
-            <div className="flex items-center gap-2.5">
-              <div className="section-card-icon bg-blue-50 text-[#2563EB] dark:bg-blue-500/10 dark:text-blue-400">
-                <FiUsers className="h-4 w-4" />
-              </div>
-              <h2 className="section-card-title">Children in Care</h2>
-              <span className="badge badge-neutral">{recentChildren.length} recent</span>
-            </div>
-            <Link to="/orphanage/children" className="flex items-center gap-1 text-xs font-semibold text-[#2563EB] hover:underline dark:text-blue-400">
-              View all <FiArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
-          <DataTable
-            columns={[
-              { key: "childCode",  label: "Child ID" },
-              { key: "name",       label: "Name" },
-              { key: "age",        label: "Age" },
-              { key: "risk",       label: "Risk Level" },
-              { key: "attendance", label: "Attendance" },
-            ]}
-            rows={recentChildren}
-          />
-        </div>
+      {(() => {
+        const filteredChildren = recentChildren.filter((child) => {
+          const age = Number(child.age);
+          if (isNaN(age)) return true;
+          if (selectedAgeFilter === "0-5") return age >= 0 && age <= 5;
+          if (selectedAgeFilter === "6-10") return age >= 6 && age <= 10;
+          if (selectedAgeFilter === "11-18") return age >= 11;
+          return true;
+        });
 
-        <div className="lg:col-span-4">
-          <NotificationPanel />
-        </div>
-      </motion.div>
+        return (
+          <motion.div {...fadeUp(0.28)} className="grid gap-5 grid-cols-1 lg:grid-cols-12">
+            <div className="lg:col-span-8 section-card">
+              <div className="section-card-header flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="section-card-icon bg-blue-50 text-[#2563EB] dark:bg-blue-500/10 dark:text-blue-400">
+                    <FiUsers className="h-4 w-4" />
+                  </div>
+                  <h2 className="section-card-title">Children in Care</h2>
+                  <span className="badge badge-neutral">
+                    {selectedAgeFilter === "ALL" ? `${recentChildren.length} total` : `${filteredChildren.length} of ${recentChildren.length}`}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Age-wise Filter Selector */}
+                  <div className="inline-flex items-center rounded-xl bg-slate-100 p-1 dark:bg-slate-800 text-xs font-semibold">
+                    {[
+                      { id: "ALL", label: "All Ages" },
+                      { id: "0-5", label: "0–5 yrs" },
+                      { id: "6-10", label: "6–10 yrs" },
+                      { id: "11-18", label: "11+ yrs" },
+                    ].map((pill) => (
+                      <button
+                        key={pill.id}
+                        type="button"
+                        onClick={() => setSelectedAgeFilter(pill.id)}
+                        className={`px-2.5 py-1 rounded-lg transition-all ${
+                          selectedAgeFilter === pill.id
+                            ? "bg-[#2563EB] text-white shadow-sm"
+                            : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+                        }`}
+                      >
+                        {pill.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <Link to="/orphanage/children" className="flex items-center gap-1 text-xs font-semibold text-[#2563EB] hover:underline dark:text-blue-400">
+                    View all <FiArrowRight className="h-3 w-3" />
+                  </Link>
+                </div>
+              </div>
+              <DataTable
+                columns={[
+                  { key: "childCode",  label: "Child ID" },
+                  { key: "name",       label: "Name" },
+                  { key: "age",        label: "Age" },
+                  { key: "risk",       label: "Risk Level" },
+                  { key: "attendance", label: "Attendance" },
+                ]}
+                rows={filteredChildren}
+              />
+            </div>
+
+            <div className="lg:col-span-4">
+              <NotificationPanel />
+            </div>
+          </motion.div>
+        );
+      })()}
     </div>
   );
 }
