@@ -24,7 +24,7 @@ export class PrismaService
 
     if (typeof (this as any).$use === 'function') {
       (this as any).$use(async (params: any, next: any) => {
-        let retries = 2;
+        let retries = 3;
         while (retries >= 0) {
           try {
             return await next(params);
@@ -33,18 +33,20 @@ export class PrismaService
               error?.message?.includes('Closed') ||
               error?.message?.includes('kind: Closed') ||
               error?.message?.includes('Connection closed') ||
+              error?.message?.includes('Can\'t reach database') ||
               error?.code === 'P1001' ||
               error?.code === 'P1017';
 
             if (isClosed && retries > 0) {
               this.logger.warn(
-                `Prisma connection closed/dropped ("${error.message}"). Reconnecting Prisma... (${retries} retries left)`,
+                `Prisma connection error ("${error.message}"). Reconnecting... (${retries} retries left)`,
               );
               retries--;
               try {
                 await this.$disconnect();
               } catch { }
-              await new Promise((res) => setTimeout(res, 500));
+              // Wait longer for Neon cold start (scale-to-zero wake-up)
+              await new Promise((res) => setTimeout(res, 3000));
               await this.$connect();
               continue;
             }
@@ -56,7 +58,7 @@ export class PrismaService
   }
 
   async onModuleInit() {
-    let retries = 5;
+    let retries = 8;
     let connected = false;
     while (retries > 0 && !connected) {
       try {
@@ -67,9 +69,9 @@ export class PrismaService
         retries--;
         if (retries > 0) {
           this.logger.warn(
-            `Initial Prisma connection attempt failed (Neon Serverless wake-up/cold start): ${err.message}. Retrying in 1.5s... (${retries} attempts left)`,
+            `Initial Prisma connection attempt failed (Neon Serverless wake-up/cold start): ${err.message}. Retrying in 3s... (${retries} attempts left)`,
           );
-          await new Promise((res) => setTimeout(res, 1500));
+          await new Promise((res) => setTimeout(res, 3000));
         } else {
           this.logger.error(`Initial Prisma connection error: ${err.message}`);
         }
