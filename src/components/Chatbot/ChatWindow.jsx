@@ -1,3 +1,4 @@
+import React from "react";
 /**
  * ChatWindow.jsx
  * Full chat window panel: header, scrollable message list, typing indicator,

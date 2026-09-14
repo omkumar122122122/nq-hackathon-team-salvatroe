@@ -1,3 +1,4 @@
+import React from "react";
 import { FiSearch, FiX } from "react-icons/fi";
 
 export default function SearchBar({ value, onChange, placeholder = "Search records…", className = "" }) {

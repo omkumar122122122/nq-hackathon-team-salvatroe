@@ -1,3 +1,4 @@
+import React from "react";
 import { FiActivity, FiHeart, FiGift, FiUser, FiDollarSign, FiPackage, FiMapPin } from "react-icons/fi";
 import DashboardLayout from "./DashboardLayout.jsx";
 

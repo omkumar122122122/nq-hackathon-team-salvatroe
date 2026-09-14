@@ -18,6 +18,11 @@ export const childrenService = {
       .filter(([_, value]) => value !== undefined && value !== '')
       .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
 
+    // Prisma Child model has approximateAge, not age
+    if (cleanParams.sortBy === 'age') {
+      cleanParams.sortBy = 'approximateAge';
+    }
+
     const response = await apiClient.get('/children', cleanParams);
     return unwrap(response);
   },

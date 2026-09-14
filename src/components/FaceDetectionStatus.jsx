@@ -1,3 +1,4 @@
+import React from "react";
 /**
  * FaceDetectionStatus — Live Status Panel Component
  * ------------------------------------------------------------------

@@ -54,3 +54,7 @@ ai
 # OS generated files
 **/.DS_Store
 **/Thumbs.db
+# Vite & IDE caches
+.vite/
+**/.vite/
+

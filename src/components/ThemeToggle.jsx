@@ -1,3 +1,4 @@
+import React from "react";
 import { FiSun, FiMoon } from "react-icons/fi";
 import { useTheme } from "../context/ThemeContext";
 

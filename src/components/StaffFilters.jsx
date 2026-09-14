@@ -1,3 +1,4 @@
+import React from "react";
 /**
  * StaffFilters Component
  * Filter controls for staff list (role, status, sort)

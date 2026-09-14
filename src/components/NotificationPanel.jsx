@@ -1,3 +1,4 @@
+import React from "react";
 import { useState, useEffect } from "react";
 import { FiBell, FiActivity, FiHeart, FiFileText, FiAlertTriangle } from "react-icons/fi";
 import { motion } from "framer-motion";

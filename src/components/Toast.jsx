@@ -1,3 +1,4 @@
+import React from "react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiCheckCircle, FiAlertCircle, FiInfo, FiAlertTriangle, FiX } from 'react-icons/fi';
 import { classNames } from '../utils/formatters';

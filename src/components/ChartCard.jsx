@@ -1,3 +1,4 @@
+import React from "react";
 import {
   ArcElement, CategoryScale, Chart as ChartJS, Filler,
   Legend, LinearScale, LineElement, PointElement, Tooltip,

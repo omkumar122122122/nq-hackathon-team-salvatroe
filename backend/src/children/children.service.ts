@@ -140,7 +140,9 @@ export class ChildrenService {
       page = 1, 
       limit = 8, 
       sortBy = 'admissionDate', 
-      sortOrder = 'desc' 
+      sortOrder = 'desc',
+      ageMin,
+      ageMax,
     } = filterDto;
 
     const andConditions: Prisma.ChildWhereInput[] = [
@@ -172,6 +174,14 @@ export class ChildrenService {
       andConditions.push({ adoptionStatus });
     }
 
+    // Age range filter — approximateAge is the stored numeric age field
+    if (ageMin !== undefined) {
+      andConditions.push({ approximateAge: { gte: ageMin } });
+    }
+    if (ageMax !== undefined) {
+      andConditions.push({ approximateAge: { lte: ageMax } });
+    }
+
     const where: Prisma.ChildWhereInput = {
       AND: andConditions,
     };
@@ -181,7 +191,20 @@ export class ChildrenService {
 
     const total = await this.prisma.child.count({ where });
 
-    const orderByField = sortBy as keyof Prisma.ChildOrderByWithRelationInput;
+    // Map virtual/alias sort keys to real Prisma ChildOrderByWithRelationInput fields
+    const sortFieldMap: Record<string, string> = {
+      age: 'approximateAge',   // 'age' is computed — sort by stored approximateAge
+      name: 'firstName',
+    };
+    // Whitelist of safe Prisma sort fields to prevent 400 errors from invalid keys
+    const safeSortFields = new Set([
+      'id', 'childCode', 'firstName', 'lastName', 'dateOfBirth', 'approximateAge',
+      'gender', 'healthStatus', 'currentStatus', 'adoptionStatus', 'admissionDate',
+      'createdAt', 'updatedAt',
+    ]);
+    const resolvedSortField = sortFieldMap[sortBy] ?? sortBy;
+    const orderByField = (safeSortFields.has(resolvedSortField) ? resolvedSortField : 'admissionDate') as keyof Prisma.ChildOrderByWithRelationInput;
+
     const children = await this.prisma.child.findMany({
       where,
       include: {
@@ -204,6 +227,7 @@ export class ChildrenService {
       skip,
       take,
     });
+
 
     const data: ChildBasicDto[] = children.map((child) => {
       const age = child.dateOfBirth

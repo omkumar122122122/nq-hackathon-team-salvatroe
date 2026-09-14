@@ -1,3 +1,4 @@
+import React from "react";
 import AIInterviewCall from "./AIInterviewCall";
 
 export default function AssessmentWizard({ childId, scheduleId, childName, onFinish, onCancel }) {

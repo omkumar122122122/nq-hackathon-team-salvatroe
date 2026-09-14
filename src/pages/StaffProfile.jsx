@@ -1,3 +1,4 @@
+import React from "react";
 /**
  * StaffProfile Page
  * Detailed view of individual staff member
