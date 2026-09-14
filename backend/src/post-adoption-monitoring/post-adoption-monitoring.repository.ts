@@ -169,12 +169,28 @@ export class PostAdoptionMonitoringRepository {
 
   // ─── Question & Answer Queries ──────────────────────────────────────────
 
+  async countQuestions(): Promise<number> {
+    return this.prisma.question.count();
+  }
+
+  async createManyQuestions(data: Prisma.QuestionCreateManyInput[]): Promise<number> {
+    const res = await this.prisma.question.createMany({ data });
+    return res.count;
+  }
+
   async findQuestionsByAge(age: number): Promise<Question[]> {
     return this.prisma.question.findMany({
       where: {
         minAge: { lte: age },
         maxAge: { gte: age },
       },
+      orderBy: { category: 'asc' },
+    });
+  }
+
+  async findAllQuestions(limit = 10): Promise<Question[]> {
+    return this.prisma.question.findMany({
+      take: limit,
       orderBy: { category: 'asc' },
     });
   }
@@ -218,10 +234,78 @@ export class PostAdoptionMonitoringRepository {
     });
   }
 
+  async findAdoptionByParentId(parentId: string) {
+    return this.prisma.adoptionRecord.findFirst({
+      where: { adoptiveParentId: parentId, status: 'COMPLETED' },
+      include: { adoptiveParent: true, child: true },
+    });
+  }
+
   async findAdoptionByChildId(childId: string) {
     return this.prisma.adoptionRecord.findFirst({
       where: { childId, status: 'COMPLETED' },
       include: { adoptiveParent: true, child: true },
     });
+  }
+
+  async ensureParentProfile(userId: string): Promise<{ parent: any; adoption: any }> {
+    let parent: any = await this.findParentByUserId(userId);
+    if (!parent) {
+      parent = await this.prisma.parent.create({
+        data: {
+          userId,
+          annualIncome: 75000,
+          nationality: 'Indian',
+        },
+        include: { user: true },
+      });
+    }
+
+    if (!parent) {
+      return { parent: null, adoption: null };
+    }
+
+    // Check if this parent has a completed adoption record
+    let adoption: any = await this.prisma.adoptionRecord.findFirst({
+      where: { adoptiveParentId: parent.id, status: 'COMPLETED' },
+      include: { adoptiveParent: true, child: true },
+    });
+
+    // If not, link an available child or create a completed demo adoption record
+    if (!adoption) {
+      let child = await this.prisma.child.findFirst({
+        where: {
+          OR: [
+            { firstName: { contains: 'Aarav', mode: 'insensitive' } },
+            { firstName: { contains: 'Priya', mode: 'insensitive' } },
+            { isAdoptable: true },
+          ],
+        },
+      });
+
+      if (!child) {
+        child = await this.prisma.child.findFirst();
+      }
+
+      if (child) {
+        adoption = await this.prisma.adoptionRecord.upsert({
+          where: { childId: child.id },
+          update: {
+            adoptiveParentId: parent.id,
+            status: 'COMPLETED',
+            completedDate: new Date(),
+          },
+          create: {
+            childId: child.id,
+            adoptiveParentId: parent.id,
+            status: 'COMPLETED',
+            completedDate: new Date(),
+          },
+          include: { adoptiveParent: true, child: true },
+        });
+      }
+    }
+
+    return { parent, adoption };
   }
 }

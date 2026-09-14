@@ -21,6 +21,7 @@ export class AIProviderService {
   private readonly logger = new Logger(AIProviderService.name);
   private readonly client: InferenceClient | null;
   private readonly model: string;
+  private readonly provider: string;
   private readonly temperature: number;
   private readonly maxTokens: number;
 
@@ -28,11 +29,19 @@ export class AIProviderService {
     const apiKey =
       process.env.HF_API_KEY || this.configService.get<string>("HF_API_KEY");
 
-    this.client = apiKey ? new InferenceClient(apiKey) : null;
     this.model = this.configService.get<string>(
       "HF_MODEL",
-      "Qwen/Qwen2.5-7B-Instruct",
+      "meta-llama/Llama-3.1-8B-Instruct",
     );
+    this.provider = this.configService.get<string>("HF_PROVIDER", "nscale");
+
+    this.client = apiKey
+      ? new InferenceClient(
+          apiKey,
+          (this.provider ? { provider: this.provider } : undefined) as any,
+        )
+      : null;
+
     this.temperature = parseFloat(
       this.configService.get<string>("AI_TEMPERATURE", "0.7"),
     );
@@ -48,7 +57,8 @@ export class AIProviderService {
       return;
     }
 
-    this.logger.log(`AI Provider initialized: ${this.model}`);
+    this.logger.log(`Sahayak AI provider: ${this.provider}`);
+    this.logger.log(`Sahayak AI model: ${this.model}`);
   }
 
   /**
@@ -96,12 +106,28 @@ export class AIProviderService {
       ];
 
       // Call Hugging Face Inference API
-      const response = await this.client.chatCompletion({
-        model: this.model,
-        messages,
-        temperature: this.temperature,
-        max_tokens: this.maxTokens,
-      });
+      let response;
+      try {
+        response = await this.client.chatCompletion({
+          model: this.model,
+          messages,
+          temperature: this.temperature,
+          max_tokens: this.maxTokens,
+        });
+      } catch (callErr: any) {
+        if (this.provider === "nscale") {
+          this.logger.warn(`Primary provider ${this.provider} error: ${callErr.message}. Attempting fallback to featherless-ai...`);
+          response = await this.client.chatCompletion({
+            model: this.model,
+            messages,
+            temperature: this.temperature,
+            max_tokens: this.maxTokens,
+            provider: "featherless-ai" as any,
+          });
+        } else {
+          throw callErr;
+        }
+      }
 
       const reply = response.choices?.[0]?.message?.content?.trim();
 
