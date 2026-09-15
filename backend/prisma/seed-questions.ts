@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-const defaultQuestions = [
+export const defaultQuestions = [
   // Ages 0 - 5 (Early Childhood Welfare)
   {
     minAge: 0,
@@ -21,6 +21,18 @@ const defaultQuestions = [
     maxAge: 5,
     category: 'NUTRITION_CARE',
     question: 'Are there any dietary issues or sleep disturbances observed?',
+  },
+  {
+    minAge: 0,
+    maxAge: 5,
+    category: 'DEVELOPMENT',
+    question: 'Does the child show age-appropriate developmental milestones, speech, and motor skills?',
+  },
+  {
+    minAge: 0,
+    maxAge: 5,
+    category: 'SAFETY_WELLBEING',
+    question: 'Is the living environment safe, child-proofed, and free from any hazards?',
   },
 
   // Ages 6 - 10 (Primary School & Socialization)
@@ -48,6 +60,12 @@ const defaultQuestions = [
     category: 'SOCIAL_INTERACTION',
     question: 'Does the child participate in extracurricular or community play activities?',
   },
+  {
+    minAge: 6,
+    maxAge: 10,
+    category: 'DAILY_ROUTINE',
+    question: 'How is the child managing daily homework, sleep schedule, and nutrition at home?',
+  },
 
   // Ages 11 - 16 (Adolescence & Development)
   {
@@ -74,26 +92,37 @@ const defaultQuestions = [
     category: 'HEALTH_SAFETY',
     question: 'Are there any signs of emotional stress, anxiety, or behavioral changes?',
   },
+  {
+    minAge: 11,
+    maxAge: 16,
+    category: 'FUTURE_READINESS',
+    question: 'Does the adolescent feel confident and optimistic about their future, education, and career paths?',
+  },
 ];
 
 async function seed() {
   console.log('Seeding Post-Adoption Welfare Assessment Questions...');
 
-  const count = await prisma.question.count();
-  if (count === 0) {
+  const existing = await prisma.question.findMany({ select: { question: true } });
+  const existingSet = new Set(existing.map((q) => q.question));
+  const missing = defaultQuestions.filter((q) => !existingSet.has(q.question));
+
+  if (missing.length > 0) {
     await prisma.question.createMany({
-      data: defaultQuestions,
+      data: missing,
     });
-    console.log(`Successfully seeded ${defaultQuestions.length} assessment questions.`);
+    console.log(`Successfully seeded ${missing.length} missing assessment questions.`);
   } else {
-    console.log(`Questions table already populated with ${count} questions.`);
+    console.log(`Questions table already populated with all ${defaultQuestions.length} default questions.`);
   }
 
   await prisma.$disconnect();
 }
 
-seed().catch((e) => {
-  console.error('Error seeding questions:', e);
-  prisma.$disconnect();
-  process.exit(1);
-});
+if (require.main === module) {
+  seed().catch((e) => {
+    console.error('Error seeding questions:', e);
+    prisma.$disconnect();
+    process.exit(1);
+  });
+}
